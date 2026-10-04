@@ -44,6 +44,9 @@ class CompanyBootstrapService
                 'email' => strtolower(trim($data['email'])),
                 'phone' => $data['phone'] ?? null,
             ]);
+            if (! empty($claim['company_code'])) {
+                $code = $claim['company_code'];
+            }
 
             return DB::transaction(function () use ($data, $claim, $code) {
             $company = Company::create([

@@ -68,7 +68,7 @@ class PosFlowTest extends TestCase
             'email' => 'ali@traders.test',
             'phone' => '03001234567',
             'password' => 'secret1',
-        ])->assertCreated()
+        ] + $this->signupCaptcha())->assertCreated()
             ->assertJsonPath('organization', 'alitraders')
             ->assertJsonPath('user_name', 'Ali Khan');
 
@@ -95,7 +95,81 @@ class PosFlowTest extends TestCase
             'country' => 'Pakistan',
             'email' => 'other@traders.test',
             'password' => 'secret1',
-        ])->assertStatus(422);
+        ] + $this->signupCaptcha())->assertStatus(422);
+    }
+
+    public function test_signup_reuses_the_master_row_when_the_company_name_matches(): void
+    {
+        app(MasterClientRegistry::class)->ensureSchema();
+        DB::connection('master')->table('tenants')->insert([
+            'name' => 'Awais Company',
+            'subdomain' => 'awais',
+            'company_code' => 'awais',
+            'db_host' => '127.0.0.1',
+            'db_name' => 'hr360_awais',
+            'db_user' => 'root',
+            'db_password' => '',
+            'status' => 'active',
+            'hr_app' => 1,
+            'accounts_app' => 0,
+            'pos_app' => 0,
+            'source' => 'signup',
+            'created_at' => now(),
+        ]);
+        $existingId = (int) DB::connection('master')->table('tenants')->where('subdomain', 'awais')->value('id');
+
+        $this->postJson('/api/signup', [
+            'name' => 'Awais',
+            'company_name' => 'Awais Company',
+            'company_code' => 'awaispos',
+            'designation' => 'Owner',
+            'industry' => 'Retail',
+            'country' => 'United States',
+            'email' => 'awais@company.test',
+            'password' => 'secret1',
+        ] + $this->signupCaptcha())->assertCreated()
+            ->assertJsonPath('organization', 'awais');
+
+        $this->assertSame(1, DB::connection('master')->table('tenants')->count());
+        $row = DB::connection('master')->table('tenants')->where('id', $existingId)->first();
+        $this->assertSame(1, (int) $row->pos_app);
+        $this->assertSame(1, (int) $row->hr_app);
+        $this->assertSame('hr360_awais', $row->db_name);
+        $this->assertSame('awais', Company::query()->value('company_code'));
+
+        $this->postJson('/api/signup', [
+            'name' => 'Other',
+            'company_name' => 'Awais Company',
+            'company_code' => 'anothercode',
+            'designation' => 'Manager',
+            'industry' => 'Retail',
+            'country' => 'United States',
+            'email' => 'other@company.test',
+            'password' => 'secret1',
+        ] + $this->signupCaptcha())->assertStatus(422);
+
+        $this->assertSame(1, DB::connection('master')->table('tenants')->count());
+    }
+
+    public function test_signup_rejects_a_wrong_captcha(): void
+    {
+        $issued = $this->getJson('/api/signup/captcha')->assertOk()->json();
+
+        $this->postJson('/api/signup', [
+            'name' => 'No One',
+            'company_name' => 'No Shop',
+            'company_code' => 'noshop',
+            'designation' => 'Owner',
+            'industry' => 'Retail',
+            'country' => 'Pakistan',
+            'email' => 'none@shop.test',
+            'password' => 'secret1',
+            'captcha_token' => $issued['token'],
+            'captcha_answer' => 'WRONG',
+        ])->assertStatus(422)
+            ->assertJsonPath('message', 'The verification code is incorrect. Request a new code and try again.');
+
+        $this->assertSame(0, Company::query()->count());
     }
 
     public function test_stock_documents_follow_fifo_and_allow_negative_stock(): void
@@ -794,6 +868,19 @@ class PosFlowTest extends TestCase
         $pull = $this->withToken($token)->getJson('/api/sync/pull?device_id=device-1')->assertOk();
         $pull->assertJsonPath('shop_settings.0.shop_name', 'Demo Shop');
         $pull->assertJsonPath('payment_methods.0.name', 'Cash');
+    }
+
+    private function signupCaptcha(): array
+    {
+        $issued = $this->getJson('/api/signup/captcha')->assertOk()->json();
+        $this->assertNotEmpty($issued['token'] ?? null);
+        $this->assertNotEmpty($issued['code'] ?? null);
+        $this->assertStringStartsWith('data:image/png;base64,', (string) ($issued['image'] ?? ''));
+
+        return [
+            'captcha_token' => $issued['token'],
+            'captcha_answer' => $issued['code'],
+        ];
     }
 
     private function bootShop(): array

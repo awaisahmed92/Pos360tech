@@ -91,8 +91,15 @@ class PosStore {
     return _acceptSession(data);
   }
 
-  Future<Map<String, dynamic>> codeAvailability(String code) {
-    return api.get('/api/signup/availability', {'code': code});
+  Future<Map<String, dynamic>> codeAvailability(String code, {String companyName = ''}) {
+    return api.get('/api/signup/availability', {
+      'code': code,
+      if (companyName.trim().isNotEmpty) 'name': companyName.trim(),
+    });
+  }
+
+  Future<Map<String, dynamic>> captcha() {
+    return api.get('/api/signup/captcha');
   }
 
   Future<Map<String, dynamic>> signup(Map<String, dynamic> body) {

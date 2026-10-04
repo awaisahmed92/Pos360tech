@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\TeamController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('signup/availability', [AuthController::class, 'availability']);
+Route::get('signup/captcha', [AuthController::class, 'captcha']);
 Route::post('signup', [AuthController::class, 'signup']);
 
 Route::prefix('auth')->group(function () {

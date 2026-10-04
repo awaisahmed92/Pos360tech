@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../app.dart';
 import '../core/api_client.dart';
 import 'company_logo.dart';
+import 'phone_field.dart';
 
 /// Separate new-company form. The client row is written to the shared master database.
 class SignUpPage extends ConsumerStatefulWidget {
@@ -44,8 +47,12 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
   final _phone = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
+  final _captcha = TextEditingController();
 
   String _country = 'Pakistan';
+  String? _captchaToken;
+  Uint8List? _captchaBytes;
+  String _phoneCountry = 'US';
   bool _obscure = true;
   bool _obscureConfirm = true;
   bool _busy = false;
@@ -61,12 +68,13 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     super.initState();
     _company.addListener(_suggestCode);
     _code.addListener(_onCodeChanged);
+    _loadCaptcha();
   }
 
   @override
   void dispose() {
     _codeDebounce?.cancel();
-    for (final controller in [_name, _company, _code, _designation, _industry, _email, _phone, _password, _confirm]) {
+    for (final controller in [_name, _company, _code, _designation, _industry, _email, _phone, _password, _confirm, _captcha]) {
       controller.dispose();
     }
     super.dispose();
@@ -94,7 +102,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     if (code.length < 3) return;
     _codeDebounce = Timer(const Duration(milliseconds: 500), () async {
       try {
-        final data = await ref.read(storeProvider).codeAvailability(code);
+        final data = await ref.read(storeProvider).codeAvailability(code, companyName: _company.text);
         if (!mounted || _code.text.trim() != code) return;
         setState(() {
           _codeOk = data['available'] == true;
@@ -104,9 +112,32 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     });
   }
 
+  Future<void> _loadCaptcha() async {
+    try {
+      final data = await ref.read(storeProvider).captcha();
+      final image = data['image']?.toString() ?? '';
+      final comma = image.indexOf(',');
+      final bytes = comma >= 0 ? base64Decode(image.substring(comma + 1)) : null;
+      if (!mounted) return;
+      setState(() {
+        _captchaToken = data['token']?.toString();
+        _captchaBytes = bytes;
+        _captcha.clear();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = apiError(error));
+    }
+  }
+
   Future<void> _submit() async {
     setState(() => _error = null);
     if (!_formKey.currentState!.validate()) return;
+    final token = _captchaToken;
+    if (token == null || token.isEmpty) {
+      setState(() => _error = 'The verification code is still loading. Please wait.');
+      return;
+    }
     setState(() => _busy = true);
     try {
       final data = await ref.read(storeProvider).signup({
@@ -117,14 +148,17 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
         'industry': _industry.text.trim(),
         'country': _country,
         'email': _email.text.trim(),
-        'phone': _phone.text.trim(),
+        'phone': composePhone(_phoneCountry, _phone.text),
         'password': _password.text,
+        'captcha_token': token,
+        'captcha_answer': _captcha.text.trim(),
       });
       if (!mounted) return;
       setState(() => _done = data);
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = apiError(error));
+      await _loadCaptcha();
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -219,7 +253,13 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
               initialValue: _country,
               decoration: _decoration('Select your country *'),
               items: [for (final country in _countries) DropdownMenuItem(value: country, child: Text(country))],
-              onChanged: (value) => setState(() => _country = value ?? 'Pakistan'),
+              onChanged: (value) {
+                final name = value ?? 'Pakistan';
+                setState(() {
+                  _country = name;
+                  _phoneCountry = phoneCountryByName(name).code;
+                });
+              },
             ),
           ),
           _input(_email, 'Work Email *', keyboard: TextInputType.emailAddress, validate: (value) {
@@ -228,7 +268,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
             if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(text)) return 'Enter a valid email address';
             return null;
           }),
-          _input(_phone, 'Mobile Number', requiredField: false, keyboard: TextInputType.phone),
+          PhoneField(
+            controller: _phone,
+            countryCode: _phoneCountry,
+            onCountryCode: (code) => setState(() => _phoneCountry = code),
+          ),
           _input(_password, 'Password *', obscure: _obscure, suffix: IconButton(
             onPressed: () => setState(() => _obscure = !_obscure),
             icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
@@ -237,6 +281,37 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
             onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
             icon: Icon(_obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
           ), validate: (value) => value != _password.text ? 'Passwords do not match' : null),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 168,
+                  height: 56,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF3FB),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFD5DBE5)),
+                  ),
+                  child: _captchaBytes == null
+                      ? const Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
+                      : Image.memory(_captchaBytes!, fit: BoxFit.cover, gaplessPlayback: true),
+                ),
+                IconButton(
+                  tooltip: 'New code',
+                  onPressed: _busy ? null : _loadCaptcha,
+                  icon: const Icon(Icons.refresh, color: _brand),
+                ),
+              ],
+            ),
+          ),
+          _input(
+            _captcha,
+            'Verification code *',
+            empty: 'Type the characters shown above',
+            validate: (value) => (value ?? '').trim().length < 4 ? 'Type the characters shown above' : null,
+          ),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),

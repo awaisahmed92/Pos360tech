@@ -5,14 +5,24 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\CompanyBootstrapService;
 use App\Services\MasterClientRegistry;
+use App\Services\SignupCaptcha;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
     public function __construct(
         private readonly CompanyBootstrapService $bootstrap,
         private readonly MasterClientRegistry $clients,
+        private readonly SignupCaptcha $captcha,
     ) {}
+
+    public function captcha()
+    {
+        return response()->json([
+            'success' => true,
+        ] + $this->captcha->issue());
+    }
 
     public function availability(Request $request)
     {
@@ -34,13 +44,22 @@ class AuthController extends Controller
             ]);
         }
 
-        $existing = $this->clients->find($code);
+        try {
+            $existing = $this->clients->find($code, (string) $request->query('name', ''));
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => true,
+                'code' => $code,
+                'available' => false,
+                'message' => collect($e->errors())->flatten()->first() ?: 'That company is already registered.',
+            ]);
+        }
         if ($existing && (int) ($existing->pos_app ?? 0) === 1) {
             return response()->json([
                 'success' => true,
                 'code' => $code,
                 'available' => false,
-                'message' => 'That company code is already registered for POS360tech.',
+                'message' => 'That company already has POS360tech. Sign in with the existing company code.',
             ]);
         }
         if ($existing) {
@@ -73,9 +92,17 @@ class AuthController extends Controller
             'email' => ['required', 'email', 'max:160', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:60'],
             'password' => ['required', 'string', 'min:6', 'max:191'],
+            'captcha_token' => ['required', 'string', 'max:64'],
+            'captcha_answer' => ['required', 'string', 'max:12'],
             'device_id' => ['nullable', 'string', 'max:100'],
             'device_name' => ['nullable', 'string', 'max:120'],
         ]);
+        if (! $this->captcha->check($data['captcha_token'], $data['captcha_answer'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The verification code is incorrect. Request a new code and try again.',
+            ], 422);
+        }
         $data['device_id'] = $data['device_id'] ?? 'signup';
         $data['device_name'] = $data['device_name'] ?? 'POS360tech signup';
 

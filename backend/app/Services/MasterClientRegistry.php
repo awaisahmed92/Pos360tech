@@ -45,15 +45,57 @@ class MasterClientRegistry
         self::$mysqlReady = true;
     }
 
-    public function find(string $code): ?object
+    public function find(string $code, string $companyName = ''): ?object
     {
         $this->ensureSchema();
 
-        return DB::connection('master')->table('tenants')
-            ->where(function ($query) use ($code) {
-                $query->where('subdomain', $code)->orWhere('company_code', $code);
-            })
-            ->first();
+        return self::pick(
+            DB::connection('master')->table('tenants')->get(),
+            self::normalize($code),
+            self::normalize($companyName),
+        );
+    }
+
+    /**
+     * One master row per company. Match the company code or the company name,
+     * so "Awais Company" opened in HR is the same client when POS or Accounts signs up.
+     *
+     * @param  iterable<int, object>  $rows
+     */
+    public static function pick(iterable $rows, string $code, string $nameKey): ?object
+    {
+        $byCode = null;
+        $byName = null;
+        foreach ($rows as $row) {
+            $codes = array_filter([
+                self::normalize((string) ($row->company_code ?? '')),
+                self::normalize((string) ($row->subdomain ?? '')),
+            ]);
+            if ($code !== '' && in_array($code, $codes, true)) {
+                $byCode = $row;
+            }
+            $rowName = self::normalize((string) ($row->name ?? ''));
+            if ($nameKey !== '' && $rowName === $nameKey) {
+                $byName ??= $row;
+            }
+        }
+        if ($byCode && $byName && (int) $byCode->id !== (int) $byName->id) {
+            throw ValidationException::withMessages([
+                'company_name' => 'That company name is already registered under a different company code.',
+            ]);
+        }
+
+        return $byCode ?? $byName;
+    }
+
+    public static function canonicalCode(object $row): string
+    {
+        $code = self::normalize((string) ($row->company_code ?? ''));
+        if ($code === '') {
+            $code = self::normalize((string) ($row->subdomain ?? ''));
+        }
+
+        return $code;
     }
 
     public function posTaken(string $code): bool
@@ -73,16 +115,15 @@ class MasterClientRegistry
 
         return DB::connection('master')->transaction(function () use ($input) {
             $code = $input['company_code'];
-            $row = DB::connection('master')->table('tenants')
-                ->where(function ($query) use ($code) {
-                    $query->where('subdomain', $code)->orWhere('company_code', $code);
-                })
-                ->lockForUpdate()
-                ->first();
+            $row = self::pick(
+                DB::connection('master')->table('tenants')->lockForUpdate()->get(),
+                self::normalize($code),
+                self::normalize((string) ($input['company_name'] ?? '')),
+            );
 
             if ($row && (int) ($row->pos_app ?? 0) === 1) {
                 throw ValidationException::withMessages([
-                    'company_code' => 'That company code is already registered for POS360tech.',
+                    'company_code' => 'That company already has POS360tech. Sign in with the existing company code.',
                 ]);
             }
 
@@ -111,8 +152,13 @@ class MasterClientRegistry
                 }
                 DB::connection('master')->table('tenants')->where('id', $row->id)->update($update);
                 $this->rememberAdmin((int) $row->id, $input);
+                $canonical = self::canonicalCode($row);
 
-                return ['id' => (int) $row->id, 'created' => false];
+                return [
+                    'id' => (int) $row->id,
+                    'created' => false,
+                    'company_code' => $canonical !== '' ? $canonical : $code,
+                ];
             }
 
             $id = (int) DB::connection('master')->table('tenants')->insertGetId([
@@ -139,7 +185,7 @@ class MasterClientRegistry
             ]);
             $this->rememberAdmin($id, $input);
 
-            return ['id' => $id, 'created' => true];
+            return ['id' => $id, 'created' => true, 'company_code' => $code];
         });
     }
 
