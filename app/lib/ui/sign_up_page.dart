@@ -20,7 +20,7 @@ class SignUpPage extends ConsumerStatefulWidget {
 }
 
 class _SignUpPageState extends ConsumerState<SignUpPage> {
-  static const _brand = Color(0xFF3B82F6);
+  static const _brand = Color(0xFF0F766E);
   static const _ink = Color(0xFF16233A);
 
   static const _countries = [
@@ -168,7 +168,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 1000;
     return Scaffold(
-      backgroundColor: const Color(0xFFEAF3FB),
+      backgroundColor: const Color(0xFFF3F7F6),
       body: SafeArea(
         child: Row(
           children: [
@@ -199,8 +199,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                           constraints: const BoxConstraints(maxWidth: 420),
                           child: Material(
                             color: Colors.white,
-                            elevation: 8,
-                            borderRadius: BorderRadius.circular(12),
+                            elevation: 2,
+                            borderRadius: BorderRadius.circular(20),
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
                               child: _done == null ? _form() : _success(),

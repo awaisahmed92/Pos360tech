@@ -55,11 +55,14 @@ class AppShell extends ConsumerWidget {
                     child: Column(
                       children: [
                         Material(
-                          color: const Color(0xFF14181F),
+                          color: Colors.white,
                           child: Container(
                             width: double.infinity,
                             height: 56,
                             padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: const BoxDecoration(
+                              border: Border(bottom: BorderSide(color: Color(0xFFE6E8EE))),
+                            ),
                             child: Row(
                               children: [
                                 if (phone)
@@ -67,7 +70,7 @@ class AppShell extends ConsumerWidget {
                                     builder: (inner) => IconButton(
                                       tooltip: 'Menu',
                                       onPressed: () => Scaffold.of(inner).openDrawer(),
-                                      icon: const Icon(Icons.menu, color: Colors.white),
+                                      icon: const Icon(Icons.menu, color: Color(0xFF1A1D26)),
                                     ),
                                   ),
                                 Container(
@@ -75,7 +78,7 @@ class AppShell extends ConsumerWidget {
                                   height: 32,
                                   padding: const EdgeInsets.all(3),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: const Color(0xFF0F766E).withValues(alpha: 0.10),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const CompanyLogo(size: 26),
@@ -84,14 +87,14 @@ class AppShell extends ConsumerWidget {
                                   const SizedBox(width: 8),
                                   const Text(
                                     'POS360',
-                                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
+                                    style: TextStyle(color: Color(0xFF1A1D26), fontSize: 16, fontWeight: FontWeight.w800),
                                   ),
                                   const SizedBox(width: 16),
                                   Flexible(
                                     child: Text(
                                       wide ? _date() : _shortDate(),
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: Color(0xFFC5CAD3), fontWeight: FontWeight.w600),
+                                      style: const TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -115,9 +118,9 @@ class AppShell extends ConsumerWidget {
                                     }
                                     return ActionChip(
                                       visualDensity: VisualDensity.compact,
-                                      backgroundColor: const Color(0xFF1E242E),
-                                      side: const BorderSide(color: Color(0xFF2A3140)),
-                                      labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                                      backgroundColor: const Color(0xFFF3F5F8),
+                                      side: const BorderSide(color: Color(0xFFE6E8EE)),
+                                      labelStyle: const TextStyle(color: Color(0xFF1A1D26), fontWeight: FontWeight.w600),
                                       avatar: icon,
                                       label: Text(label),
                                       onPressed: () => ref.read(storeProvider).flush(),
@@ -132,7 +135,7 @@ class AppShell extends ConsumerWidget {
                                     final current = rows.any((row) => row.clientUuid == selected) ? selected! : '';
                                     return _BarMenu<String>(
                                       value: current,
-                                      onInk: true,
+                                      onInk: false,
                                       menuWidth: 220,
                                       items: [
                                         DropdownItem(value: '', child: Text(l10n.t('allBranches'))),
@@ -145,7 +148,7 @@ class AppShell extends ConsumerWidget {
                                 const SizedBox(width: 8),
                                 _BarMenu<String>(
                                   value: languageByCode(l10n.code)?.code ?? 'en',
-                                  onInk: true,
+                                  onInk: false,
                                   menuWidth: 180,
                                   items: [
                                     for (final language in appLanguages) DropdownItem(value: language.code, child: Text(language.native)),
@@ -168,7 +171,7 @@ class AppShell extends ConsumerWidget {
                                     const SizedBox(width: 8),
                                     Text(
                                       session.name,
-                                      style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+                                      style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1A1D26)),
                                     ),
                                   ],
                                 ],
@@ -179,7 +182,7 @@ class AppShell extends ConsumerWidget {
                                     await ref.read(sessionProvider.notifier).logout();
                                     if (context.mounted) context.go('/login');
                                   },
-                                  icon: const Icon(Icons.logout, color: Colors.white),
+                                  icon: const Icon(Icons.logout, color: Color(0xFF1A1D26)),
                                 ),
                               ],
                             ),

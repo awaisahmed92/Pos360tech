@@ -296,20 +296,20 @@ class PosApp extends ConsumerWidget {
         ),
         inputDecorationTheme: const InputDecorationTheme(
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Color(0xFFF9FAFB),
           isDense: false,
           contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 16),
           hintStyle: TextStyle(color: Color(0xFF94A3B8)),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
             borderSide: BorderSide(color: Color(0xFFE6E8EE)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
             borderSide: BorderSide(color: Color(0xFFE6E8EE)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
             borderSide: BorderSide(color: Color(0xFF0F766E), width: 1.6),
           ),
         ),
@@ -318,7 +318,7 @@ class PosApp extends ConsumerWidget {
             backgroundColor: const Color(0xFF0F766E),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
           ),
         ),
