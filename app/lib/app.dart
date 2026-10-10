@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -156,8 +157,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
   ref.listen(sessionProvider, (previous, next) => refresh.value++);
   const publicPaths = {'/', '/login', '/sign-up', '/register'};
+  final home = kIsWeb ? '/' : '/login';
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: home,
     refreshListenable: refresh,
     redirect: (context, state) {
       final session = ref.read(sessionProvider);
@@ -165,7 +167,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final location = state.matchedLocation;
       final atPublic = publicPaths.contains(location);
       if (session.isLoading) return null;
-      if (!loggedIn && !atPublic) return '/';
+      if (!kIsWeb && !loggedIn && location == '/') return '/login';
+      if (!loggedIn && !atPublic) return home;
       if (loggedIn && atPublic) return '/dashboard';
       return null;
     },
