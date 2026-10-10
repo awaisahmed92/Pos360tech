@@ -174,6 +174,7 @@ class MasterClientRegistry
                 'hr_app' => 0,
                 'accounts_app' => 0,
                 'pos_app' => 1,
+                'school_app' => 0,
                 'industry' => $input['industry'] ?? null,
                 'country' => $input['country'] ?? null,
                 'contact_name' => $input['contact_name'],

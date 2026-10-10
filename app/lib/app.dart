@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'core/api_client.dart';
 import 'core/database.dart';
@@ -276,7 +277,7 @@ class PosApp extends ConsumerWidget {
           primary: const Color(0xFF0F766E),
           surface: Colors.white,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF4F6F8),
+        scaffoldBackgroundColor: const Color(0xFFF3F5F8),
         useMaterial3: true,
         splashFactory: InkSparkle.splashFactory,
         pageTransitionsTheme: const PageTransitionsTheme(
@@ -288,9 +289,10 @@ class PosApp extends ConsumerWidget {
             TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
           },
         ),
-        textTheme: const TextTheme(
-          headlineSmall: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
-          titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+        textTheme: GoogleFonts.plusJakartaSansTextTheme().copyWith(
+          headlineSmall: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1A1D26)),
+          titleMedium: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF1A1D26)),
+          bodyMedium: GoogleFonts.plusJakartaSans(fontSize: 14, color: const Color(0xFF1A1D26)),
         ),
         inputDecorationTheme: const InputDecorationTheme(
           filled: true,
@@ -299,15 +301,15 @@ class PosApp extends ConsumerWidget {
           contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 16),
           hintStyle: TextStyle(color: Color(0xFF94A3B8)),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10)),
-            borderSide: BorderSide(color: Color(0xFFD7DEE3)),
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderSide: BorderSide(color: Color(0xFFE6E8EE)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10)),
-            borderSide: BorderSide(color: Color(0xFFD7DEE3)),
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderSide: BorderSide(color: Color(0xFFE6E8EE)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10)),
+            borderRadius: BorderRadius.all(Radius.circular(8)),
             borderSide: BorderSide(color: Color(0xFF0F766E), width: 1.6),
           ),
         ),
@@ -334,10 +336,10 @@ class PosApp extends ConsumerWidget {
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(14)),
-            side: BorderSide(color: Color(0xFFE6EBEF)),
+            side: BorderSide(color: Color(0xFFE6E8EE)),
           ),
         ),
-        dividerTheme: const DividerThemeData(color: Color(0xFFE6EBEF)),
+        dividerTheme: const DividerThemeData(color: Color(0xFFE6E8EE)),
       ),
       routerConfig: router,
       builder: (context, child) {

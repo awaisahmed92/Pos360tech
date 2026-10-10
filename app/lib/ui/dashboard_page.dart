@@ -1,6 +1,6 @@
 part of 'pages.dart';
 
-const _line = Color(0xFFE6EBEF);
+const _line = Color(0xFFE6E8EE);
 const _green = Color(0xFF15803D);
 const _amber = Color(0xFFB45309);
 const _red = Color(0xFFB91C1C);
@@ -173,9 +173,9 @@ Widget _dashboardHeader(BuildContext context, WidgetRef ref, L10n l10n, String n
   final title = Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(l10n.t('dashboard'), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: _ink)),
+      Text(l10n.t('dashboard'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1A1D26))),
       const SizedBox(height: 2),
-      Text('$name · ${l10n.t('dashboardHello')}', style: const TextStyle(color: _muted)),
+      Text('$name · ${l10n.t('dashboardHello')}', style: const TextStyle(color: Color(0xFF6B7280))),
     ],
   );
   final actions = Row(
@@ -587,9 +587,9 @@ class _HoverCardState extends State<_HoverCard> {
       padding: widget.padding,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _focus ? _teal : (_hover ? const Color(0xFF99F6E4) : _line), width: _focus ? 2 : 1),
-        boxShadow: lit ? const [BoxShadow(color: Color(0x14000000), blurRadius: 18, offset: Offset(0, 6))] : const [],
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _focus ? _teal : (_hover ? const Color(0xFF99F6E4) : _line), width: _focus ? 1.4 : 1),
+        boxShadow: lit ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2))] : const [],
       ),
       child: widget.child,
     );
