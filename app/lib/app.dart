@@ -152,12 +152,23 @@ bool _online(List<ConnectivityResult> results) {
 
 final l10nProvider = Provider<L10n>((ref) => L10n(ref.watch(localeProvider)));
 
+/// Company sites open on login. The public marketing page stays on the apex.
+bool _companySite(String base) {
+  if (!kIsWeb) return false;
+  final host = Uri.base.host.toLowerCase().split(':').first;
+  if (!host.endsWith('.$base')) return false;
+  final label = host.substring(0, host.length - base.length - 1);
+  if (label.isEmpty || label.contains('.') || label == 'www' || label == 'api') return false;
+  return RegExp(r'^[a-z0-9]{1,40}$').hasMatch(label);
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
   ref.onDispose(refresh.dispose);
   ref.listen(sessionProvider, (previous, next) => refresh.value++);
   const publicPaths = {'/', '/login', '/sign-up', '/register'};
-  final home = kIsWeb ? '/' : '/login';
+  final companySite = _companySite('pos360techx.com');
+  final home = (!kIsWeb || companySite) ? '/login' : '/';
   return GoRouter(
     initialLocation: home,
     refreshListenable: refresh,
@@ -167,7 +178,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final location = state.matchedLocation;
       final atPublic = publicPaths.contains(location);
       if (session.isLoading) return null;
-      if (!kIsWeb && !loggedIn && location == '/') return '/login';
+      if ((!kIsWeb || companySite) && !loggedIn && location == '/') return '/login';
       if (!loggedIn && !atPublic) return home;
       if (loggedIn && atPublic) return '/dashboard';
       return null;
