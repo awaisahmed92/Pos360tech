@@ -1,9 +1,16 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
-const apiOrigin = String.fromEnvironment(
-  'API_ORIGIN',
-  defaultValue: 'http://127.0.0.1:8000',
-);
+const _apiOriginOverride = String.fromEnvironment('API_ORIGIN');
+
+/// Release builds talk to the live site. Debug builds keep the local Laravel server.
+/// Override either with `--dart-define=API_ORIGIN=https://example.com`.
+String get apiOrigin {
+  final override = _apiOriginOverride.trim();
+  if (override.isNotEmpty) return override;
+  if (kReleaseMode) return 'https://pos360techx.com';
+  return 'http://127.0.0.1:8000';
+}
 
 class ApiClient {
   ApiClient() {
