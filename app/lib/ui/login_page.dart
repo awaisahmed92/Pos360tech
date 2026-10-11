@@ -76,18 +76,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final wide = MediaQuery.sizeOf(context).width >= 980;
     final form = _formCard();
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3F7F6), Colors.white],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      backgroundColor: const Color(0xFFE4EEEC),
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(wide ? 18 : 0),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(wide ? 28 : 0),
+            child: ColoredBox(
+              color: Colors.white,
+              child: wide
+                  ? Row(children: [Expanded(flex: 5, child: form), const Expanded(flex: 6, child: _PosStory())])
+                  : form,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: wide
-              ? Row(children: [Expanded(flex: 38, child: form), const Expanded(flex: 62, child: _PosHero())])
-              : form,
         ),
       ),
     );
@@ -123,7 +124,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           const SizedBox(height: 26),
                           const Text('Welcome Back', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700)),
                           const SizedBox(height: 4),
-                          const Text('Sign in to continue', style: TextStyle(color: Color(0xFF6B7280), fontSize: 15)),
+                          const Text('Sign in to the counter, stock, and the day close.', style: TextStyle(color: Color(0xFF64748B), fontSize: 15, height: 1.4)),
                           const SizedBox(height: 24),
                           if (_error != null) ...[
                             Container(
@@ -228,10 +229,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               hintText: hint,
               suffixIcon: suffix,
               filled: true,
-              fillColor: const Color(0xFFF9FAFB),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _teal, width: 1.4)),
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFD5E4E1))),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFD5E4E1))),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: _teal, width: 1.6)),
             ),
             validator: (value) => (value == null || value.trim().isEmpty) ? '$label is required' : null,
           ),
@@ -241,52 +243,91 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 }
 
-class _PosHero extends StatelessWidget {
-  const _PosHero();
+class _PosStory extends StatefulWidget {
+  const _PosStory();
+
+  @override
+  State<_PosStory> createState() => _PosStoryState();
+}
+
+class _PosStoryState extends State<_PosStory> with SingleTickerProviderStateMixin {
+  late final AnimationController _float = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _float.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: Colors.white,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(36, 30, 36, 30),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Sales, stock,\nand the counter\nmade simple',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 50, height: 1.15, fontWeight: FontWeight.w700, color: Color(0xFF1F2937)),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'POS360tech helps shops take sales, track stock, and close the day in one place.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF6B7280), fontSize: 20),
-            ),
-            SizedBox(height: 34),
-            _PosArt(),
-          ],
-        ),
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(colors: [Color(0xFF0C3D38), Color(0xFF0F766E)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      ),
+      child: AnimatedBuilder(
+        animation: _float,
+        builder: (context, _) {
+          final dy = (_float.value - 0.5) * 16;
+          return Stack(
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(48, 56, 48, 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('POS360TECH', style: TextStyle(color: Color(0xFFB7E4DC), fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+                    SizedBox(height: 18),
+                    Text('The counter,\nstock, and the day\nin one place', style: TextStyle(color: Colors.white, fontSize: 40, height: 1.12, fontWeight: FontWeight.w700)),
+                    SizedBox(height: 22),
+                    Text('“Checkout is faster, and the evening close no longer needs a second spreadsheet.”', style: TextStyle(color: Color(0xFFE7F6F3), fontSize: 18, height: 1.45)),
+                    SizedBox(height: 18),
+                    Text('Omar Haddad', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                    Text('Store lead', style: TextStyle(color: Color(0xFFB7E4DC))),
+                  ],
+                ),
+              ),
+              Positioned(top: 40 + dy, right: 28, child: const _PosNote(icon: Icons.point_of_sale_outlined, title: 'Shift', subtitle: 'Register open')),
+              Positioned(bottom: 40 - dy, right: 46, child: const _PosNote(icon: Icons.inventory_2_outlined, title: 'Stock', subtitle: '12 items low')),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-class _PosArt extends StatelessWidget {
-  const _PosArt();
+class _PosNote extends StatelessWidget {
+  const _PosNote({required this.icon, required this.title, required this.subtitle});
+  final IconData icon;
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(maxWidth: 520, maxHeight: 290),
-      padding: const EdgeInsets.all(28),
+      width: 200,
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFFF3FAF8), Color(0xFFE5F4F1)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF0F766E).withValues(alpha: 0.15)),
+        color: Colors.white.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 8))],
       ),
-      child: const Center(child: Icon(Icons.point_of_sale_outlined, size: 160, color: Color(0xFF0F766E))),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFF0F766E)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(subtitle, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
