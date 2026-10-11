@@ -1,0 +1,34 @@
+# Laravel API. Build context is this backend/ directory. Web root is public/.
+FROM php:8.3-fpm-bookworm
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        nginx git unzip curl libzip-dev libpng-dev libonig-dev libxml2-dev libfreetype6-dev libjpeg62-turbo-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring zip bcmath gd \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+COPY . .
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/www.conf /usr/local/etc/php-fpm.d/zz-pos.conf
+
+RUN composer dump-autoload --optimize \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache \
+    && chmod +x docker-entrypoint.sh \
+    && mkdir -p /run/nginx /var/log/nginx \
+    && ln -sf /dev/stdout /var/log/nginx/access.log \
+    && ln -sf /dev/stderr /var/log/nginx/error.log
+
+ENV APP_ENV=production
+ENV APP_DEBUG=false
+EXPOSE 8000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=90s --retries=8 \
+    CMD curl -fsS http://127.0.0.1:8000/up || exit 1
+
+ENTRYPOINT ["./docker-entrypoint.sh"]
