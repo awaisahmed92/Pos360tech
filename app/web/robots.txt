@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /sign-up
+Disallow: /api
+
+Sitemap: https://pos360techx.com/sitemap.xml
